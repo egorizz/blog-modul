@@ -1,17 +1,15 @@
 /* eslint-disable */
 
-import React, { useEffect, useState, setErrorState } from 'react';
+import React, { useEffect, useState, setErrorState, useContext } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, withRouter } from 'react-router-dom';
-
 import Check from '../Check';
-import ServiseAPI from '../../ServiceAPI/ServiceAPI';
-
 import styles from './signUp.module.css';
-
-const service = new ServiseAPI();
+import ServiceContext from '../../context';
 
 const SignUp = ({ history, setErrorState }) => {
+
+  const testService = useContext(ServiceContext);
   const {
     register,
     formState: { errors, isValid },
@@ -36,10 +34,9 @@ const SignUp = ({ history, setErrorState }) => {
 
   const onSubmit = (data) => {
     if (password === password2) {
-      service.createUser(
+      testService.createUser(
         data,
         (res) => {
-          console.log(res.user.token);
           localStorage.setItem('token', res.user.token);
           setErrorState({ status: true, message: 'Регистрация прошла успешно!' });
           setTimeout(() => {
@@ -48,7 +45,6 @@ const SignUp = ({ history, setErrorState }) => {
         },
 
         (err) => {
-          console.log(err);
           setErrorState({ status: true, message: 'При регистрации произошла ошибка!' });
           setTimeout(() => {
             setErrorState({ status: false, message: '' });
@@ -121,7 +117,6 @@ const SignUp = ({ history, setErrorState }) => {
               },
             })}
             onChange={(e) => {
-              console.log(e.target.value);
               setPassword(e.target.value);
             }}
           />
