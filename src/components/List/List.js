@@ -1,19 +1,19 @@
+import { Spin, Pagination } from 'antd';
 import React, { useContext, useEffect, useState } from 'react';
-import { Pagination } from 'antd';
 import { withRouter } from 'react-router-dom';
 
-import ServiceContext from '../../context';
+import ROUTER_PATHS from '../../Paths/Paths';
 import ArticleItem from '../ArticleItem';
+import ServiceContext from '../../context';
 
 import styles from './list.module.css';
 
 const List = ({ history }) => {
-  const [articles, setArticles] = useState([1, 3, 4]);
+  const testService = useContext(ServiceContext);
+  const [articles, setArticles] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
-  /* eslint-disable-next-line */
-  const [error, setError] = useState('');
-  const testService = useContext(ServiceContext);
+  const [isLoading, setIsLoading] = useState(false);
 
   const dataReceiver = (data) => {
     setArticles(data.articles);
@@ -21,25 +21,34 @@ const List = ({ history }) => {
   };
 
   useEffect(() => {
-    testService.getArticles(
-      (res) => dataReceiver(res),
-      (err) => setError(err),
-      5,
-      (currentPage - 1) * 5
-    );
+    setIsLoading(true);
+    testService
+      .getArticles(5, (currentPage - 1) * 5)
+      .then((res) => res.json())
+      .then((res) => {
+        setIsLoading(false);
+        dataReceiver(res);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
   }, [currentPage]);
+
+  const articlesList = articles.map((article) => (
+    <ArticleItem
+      article={article}
+      key={Math.random()}
+      onItemSelected={(slug) => {
+        history.push(`${ROUTER_PATHS.ARTICLES}/${slug}`);
+      }}
+    />
+  ));
 
   return (
     <div className={styles.list}>
-      {articles.map((article) => (
-        <ArticleItem
-          article={article}
-          key={Math.random() * Date.now()}
-          onItemSelected={(slug) => {
-            history.push(`/articles/${slug}`);
-          }}
-        />
-      ))}
+      {isLoading ? <Spin size="large" /> : null}
+      {articlesList}
+
       <div className={styles.list__pagination}>
         <Pagination
           defaultCurrent={0}

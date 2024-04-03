@@ -1,80 +1,68 @@
-/* eslint-disable */
-
-import React, { useEffect, useState, setErrorState, useContext } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useState, useContext } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { Link, withRouter } from 'react-router-dom';
-import Check from '../Check';
-import styles from './signUp.module.css';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Spin, Checkbox } from 'antd';
+
 import ServiceContext from '../../context';
+import { SignUpSchema } from '../../YUP';
+import ROUTER_PATHS from '../../Paths/Paths';
 
-const SignUp = ({ history, setErrorState }) => {
+import styles from './signUp.module.css';
 
+const SignUp = ({ history, showMessage }) => {
   const testService = useContext(ServiceContext);
   const {
     register,
-    formState: { errors, isValid },
+    formState: { errors },
     handleSubmit,
     reset,
+    control,
   } = useForm({
-    mode: 'onBlur',
+    resolver: yupResolver(SignUpSchema),
     defaultValues: {
-      email: '',
-      username: '',
-      password: '',
-      password2: '',
+      checkbox: false,
     },
   });
 
-  const [password, setPassword] = useState('');
-  const [password2, setPassword2] = useState('');
-
-  const loadPassword = (e) => {
-    setPassword(e.target.value);
-  };
+  const [sendingData, setSendingData] = useState(false);
 
   const onSubmit = (data) => {
-    if (password === password2) {
-      testService.createUser(
-        data,
-        (res) => {
-          localStorage.setItem('token', res.user.token);
-          setErrorState({ status: true, message: 'Регистрация прошла успешно!' });
-          setTimeout(() => {
-            setErrorState({ status: false, message: '' });
-          }, 1500);
-        },
-
-        (err) => {
-          setErrorState({ status: true, message: 'При регистрации произошла ошибка!' });
-          setTimeout(() => {
-            setErrorState({ status: false, message: '' });
-          }, 1500);
+    setSendingData(true);
+    testService
+      .createUser(data)
+      .then((res) => {
+        if (!res.ok) {
+          showMessage(`${res.ok} Error!`);
+          setSendingData(false);
         }
-      );
-      reset();
-      history.push('sign-in/');
-    }
+        return res.json();
+      })
+      .then((res) => {
+        if (res.user.token) {
+          showMessage('Вы успешно зарегистрировались!');
+          reset();
+          localStorage.setItem('token', res.user.token);
+          history.push(ROUTER_PATHS.SIGN_IN);
+          setSendingData(false);
+        }
+      })
+      .catch((err) => {
+        showMessage(`Ошибка! ${err.message}`);
+        setSendingData(false);
+      });
   };
 
   return (
     <div className={styles.signUp}>
+      {sendingData ? <Spin size="large" /> : null}
       <form className={styles.signUp__form} onSubmit={handleSubmit(onSubmit)}>
         <div className={styles.signUp__title}>Create new account</div>
 
         <div className={styles.signUp__label}>
           <span className={styles.signUp__description}>Username</span>
           <br />
-          <input
-            className={styles.signUp__input}
-            {...register('username', {
-              required: 'Поле обязательно к заполнению',
-              minLength: { value: 3, message: 'Минимум 3 символа' },
-              maxLength: {
-                value: 20,
-                message: 'Максимум 20 символов',
-              },
-            })}
-          />
+          <input className={styles.signUp__input} {...register('username')} />
           <br />
           <span className={styles.signUp__warning}>{errors?.username && <p>{errors?.username?.message}</p>}</span>
         </div>
@@ -82,22 +70,7 @@ const SignUp = ({ history, setErrorState }) => {
         <div className={styles.signUp__label}>
           <span className={styles.signUp__description}>Email address</span>
           <br />
-          <input
-            className={styles.signUp__input}
-            {...register('email', {
-              required: 'Поле обязательно к заполнению',
-              pattern: {
-                value:
-                  /^((([0-9A-Za-z]{1}[-0-9A-z\.]{1,}[0-9A-Za-z]{1})|([0-9А-Яа-я]{1}[-0-9А-я\.]{1,}[0-9А-Яа-я]{1}))@([-A-Za-z]{1,}\.){1,2}[-A-Za-z]{2,})$/,
-                message: 'Please enter valid email!',
-              },
-              minLength: { value: 4, message: 'Минимум 4 символа' },
-              maxLength: {
-                value: 100,
-                message: 'Максимум 100 символов',
-              },
-            })}
-          />
+          <input className={styles.signUp__input} {...register('email')} />
           <br />
 
           <span className={styles.signUp__warning}>{errors?.email && <p>{errors?.email?.message}</p>}</span>
@@ -106,20 +79,7 @@ const SignUp = ({ history, setErrorState }) => {
         <div className={styles.signUp__label}>
           <span className={styles.signUp__description}>Password</span>
           <br />
-          <input
-            className={styles.signUp__input}
-            {...register('password', {
-              required: 'Поле обязательно к заполнению',
-              minLength: { value: 6, message: 'Минимум 6 символов' },
-              maxLength: {
-                value: 40,
-                message: 'Максимум 40 символов',
-              },
-            })}
-            onChange={(e) => {
-              setPassword(e.target.value);
-            }}
-          />
+          <input className={styles.signUp__input} {...register('password')} />
           <br />
           <span className={styles.signUp__warning}>{errors?.password && <p>{errors?.password?.message}</p>}</span>
         </div>
@@ -128,33 +88,34 @@ const SignUp = ({ history, setErrorState }) => {
           <span className={styles.signUp__description}>Repeat password</span>
           <br />
 
-          <input
-            className={styles.signUp__input}
-            {...register('password2', {
-              required: 'Поле обязательно к заполнению',
-              minLength: { value: 6, message: 'Минимум 6 символов' },
-              maxLength: {
-                value: 40,
-                message: 'Максимум 40 символов',
-              },
-              value: {
-                value: '1111',
-                message: 'error',
-              },
-            })}
-            onChange={(e) => setPassword2(e.target.value)}
-          />
+          <input className={styles.signUp__input} {...register('password2')} />
 
-          <span className={styles.signUp__warning}>
-            {password === password2 ? errors?.password2 && <p>{errors?.password2?.message}</p> : 'Пароли не совпадают!'}
-          </span>
+          <span className={styles.signUp__warning}>{errors?.password2 && <p>{errors?.password2?.message}</p>}</span>
           <br />
         </div>
-        <Check descript={'I agree to the processing of my personal information'} />
-        <input type="submit" className={styles.signUp__submit} disabled={!isValid} />
+
+        <p style={{ marginBottom: '20px' }}>
+          <Controller
+            name="checkbox"
+            control={control}
+            render={({ field }) => (
+              <Checkbox
+                {...field}
+                checked={field.value}
+                onChange={(e) => field.onChange(e.target.checked)}
+                style={{ color: 'rgba(89, 89, 89, 1)' }}
+              >
+                I agree to the processing of my personal information
+              </Checkbox>
+            )}
+          />
+          <span className={styles.signUp__warning}>{errors?.checkbox && <p>{errors?.checkbox?.message}</p>}</span>
+        </p>
+
+        <input type="submit" className={styles.signUp__submit} />
         <div className={styles.signUp__question}>
           Already have an account?{' '}
-          <Link to="/sign-in" className={styles.signUp__questionBlue}>
+          <Link to={ROUTER_PATHS.SIGN_IN} className={styles.signUp__questionBlue}>
             Sign In
           </Link>
         </div>
