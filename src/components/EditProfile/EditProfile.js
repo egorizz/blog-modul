@@ -9,7 +9,7 @@ import RouterPaths from '../../Paths/Paths';
 
 import styles from './editProfile.module.css';
 
-const EditProfile = ({ curUser, history, showMessage, auth }) => {
+const EditProfile = ({ curUser, history, showMessage, auth, reloadUser }) => {
   const testService = useContext(ServiceContext);
 
   const {
@@ -43,6 +43,7 @@ const EditProfile = ({ curUser, history, showMessage, auth }) => {
       .then(() => {
         showMessage('Данные успешно отредактированы!');
         history.push(RouterPaths.ARTICLES);
+        reloadUser();
         reset();
       })
       .catch((err) => {

@@ -17,10 +17,9 @@ export const SignUpSchema = yup.object().shape({
 });
 
 export const CreateArticleSchema = yup.object().shape({
-  title: yup.string(),
-  description: yup.string(),
-  body: yup.string(),
-
+  title: yup.string().required(),
+  description: yup.string().required(),
+  body: yup.string().required(),
   tags: yup.string(),
 });
 

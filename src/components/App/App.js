@@ -29,7 +29,7 @@ const App = () => {
     }, 2000);
   };
 
-  useEffect(() => {
+  const reloadUser = () => {
     if (localStorage.getItem('isAuth')) {
       setAuth(JSON.parse(localStorage.getItem('isAuth')));
     } else {
@@ -43,7 +43,11 @@ const App = () => {
       .catch((err) => {
         showMessage(`Ошибка! ${err.message}`);
       });
-  }, []);
+  };
+
+  useEffect(() => {
+    reloadUser();
+  }, [localStorage.getItem('isAuth')]);
 
   return (
     <Router>
@@ -93,7 +97,7 @@ const App = () => {
           <Route
             path={ROUTER_PATHS.PROFILE}
             render={() => {
-              return <EditProfile auth={auth} curUser={curUser} showMessage={showMessage} />;
+              return <EditProfile auth={auth} curUser={curUser} showMessage={showMessage} reloadUser={reloadUser} />;
             }}
           />
           <Route

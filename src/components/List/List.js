@@ -1,6 +1,7 @@
 import { Spin, Pagination } from 'antd';
 import React, { useContext, useEffect, useState } from 'react';
-import { withRouter } from 'react-router-dom';
+import { withRouter, useLocation } from 'react-router-dom';
+import queryString from 'query-string';
 
 import ROUTER_PATHS from '../../Paths/Paths';
 import ArticleItem from '../ArticleItem';
@@ -11,9 +12,14 @@ import styles from './list.module.css';
 const List = ({ history }) => {
   const testService = useContext(ServiceContext);
   const [articles, setArticles] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const location = useLocation();
+  const [currentPage, setCurrentPage] = useState(() => {
+    const queryParams = queryString.parse(location.search);
+    return queryParams.page ?? 1;
+  });
 
   const dataReceiver = (data) => {
     setArticles(data.articles);
@@ -21,6 +27,10 @@ const List = ({ history }) => {
   };
 
   useEffect(() => {
+    const searchParams = new URLSearchParams();
+    searchParams.append('page', currentPage);
+    history.push(`${ROUTER_PATHS.ARTICLES}/?${searchParams.toString()}`);
+
     setIsLoading(true);
     testService
       .getArticles(5, (currentPage - 1) * 5)
@@ -51,7 +61,7 @@ const List = ({ history }) => {
 
       <div className={styles.list__pagination}>
         <Pagination
-          defaultCurrent={0}
+          defaultCurrent={currentPage}
           pageSize={1}
           total={totalPages}
           showSizeChanger={false}
